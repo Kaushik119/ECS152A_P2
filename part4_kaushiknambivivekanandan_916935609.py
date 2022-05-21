@@ -28,6 +28,8 @@ def main():
   prev_response = 0
   message_counter = 1
   in_congestion = False
+  global ssthresh
+
   response = 1
   dupAckCount = 0
 
@@ -58,7 +60,7 @@ def main():
             raise socket.timeout # If three duplicate acknowledgements were received then equivalent to timeout (from textbook)
           dupAckCount += 1
           Socket.send(str.encode(past_packets[response+1]))
-          cwnd = 1
+          cwnd = int(cwnd/2)
         else:
           dupAckCount = 0
           prev_response = response
@@ -76,12 +78,13 @@ def main():
       except socket.timeout:
         # timeout deal
         # decrease cwnd to 1
+        Socket.send(str.encode(past_packets[response+1]))
         ssthresh = int(cwnd/2)
         cwnd = 1
         in_congestion = False
 
     
-    in_congestion = False
+      in_congestion = False
 
       
 if __name__ == "__main__":

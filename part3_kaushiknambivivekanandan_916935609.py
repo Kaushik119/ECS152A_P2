@@ -29,14 +29,18 @@ def main():
   past_packets = []
   message_counter = 1
   in_congestion = False
-
+  
+  global ssthresh
+  global cwnd
+  global timeout_seconds
+  
   EstimatedRTT = 0
   DevRTT = 0
   alpha = 0.875
   alpha_1 = 0.125
   beta = 0.25
   beta_1 = 0.75
-
+  
   start_time = 0
   end_time = 0
   while(start_at < file_size):
