@@ -1,8 +1,6 @@
-from asyncore import read
-from re import S
 import socket
 import os
-import sys
+import time
 
 
 # TCP TAHOE IMPLEMENTED AS DESCRIBED IN TEXTBOOK
@@ -29,14 +27,21 @@ def main():
   
   packet = ""
   past_packets = []
-  prev_response = 0
   message_counter = 1
   in_congestion = False
-  response = 1
-  dupAckCount = 0
 
+  EstimatedRTT = 0
+  DevRTT = 0
+  alpha = 0.875
+  alpha_1 = 0.125
+  beta = 0.25
+  beta_1 = 0.75
+
+  start_time = 0
+  end_time = 0
   while(start_at < file_size):
     for i in range(0 ,cwnd):
+      start_time = time.time()
       packet = message.read(read_from_file_size)
       start_at += len(packet)
       packet = str(message_counter) + "|" + packet
@@ -54,39 +59,28 @@ def main():
       Socket.settimeout(timeout_seconds)
       try:
         response = Socket.recv(BufferSize).decode()
+        end_time = time.time()
         recv_counter += 1
-        if prev_response == response:
-          # do duplicate acknowledgement
-          # decrease cwnd to 1
-          if dupAckCount == 3:
-            raise socket.timeout # If three duplicate acknowledgements were received then equivalent to timeout (from textbook)
-          dupAckCount += 1
-          Socket.send(str.encode(past_packets[response+1]))
-          cwnd = 1
+        if is_slow_start():
+          cwnd += 1
+          in_congestion = False
         else:
-          dupAckCount = 0
-          prev_response = response
-          if is_slow_start():
-            # do slow start
+          # do congestion control
+          if in_congestion == False:
             cwnd += 1
-            in_congestion = False
-          else:
-            # do congestion control
-            if in_congestion == False:
-              cwnd += 1
-              in_congestion = True
-        print(response)
-      
+            in_congestion = True
+
       except socket.timeout:
-        # timeout deal
-        # decrease cwnd to 1
+        Socket.send(str.encode(past_packets[response+1]))
         ssthresh = int(cwnd/2)
         cwnd = 1
         in_congestion = False
 
-    
-    in_congestion = False
+    SampleRTT = end_time - start_time
+    EstimatedRTT = alpha_1*EstimatedRTT + alpha*(SampleRTT)
+    DevRTT = beta_1*DevRTT + beta*(SampleRTT- EstimatedRTT)
+    timeout_seconds = EstimatedRTT+4*DevRTT
 
-      
+
 if __name__ == "__main__":
   main()
