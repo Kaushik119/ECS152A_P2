@@ -4,9 +4,11 @@ import socket
 import os
 import sys
 
+
+# TCP TAHOE IMPLEMENTED AS DESCRIBED IN TEXTBOOK
+
 read_from_file_size = 949
 timeout_seconds = 5
-delimiter = "|"
 cwnd = 1
 ssthresh = 16
 BufferSize = 100
@@ -26,44 +28,65 @@ def main():
   Socket.connect(Server)
   
   packet = ""
-  response = ""
   past_packets = []
   prev_response = 0
   message_counter = 1
-  
+  in_congestion = False
+  response = 1
+  dupAckCount = 0
+
   while(start_at < file_size):
     for i in range(0 ,cwnd):
-      Socket.settimeout(timeout_seconds)
+      packet = message.read(read_from_file_size)
+      start_at += len(packet)
+      packet = str(message_counter) + "|" + packet
+      message_counter += 1
+      past_packets.append(packet)
+
+      encoded_packet = str.encode(packet)
+
+      Socket.send(encoded_packet)
       
-      try :
-        packet = message.read(read_from_file_size)
-        past_packets.append(packet)
-        start_at += len(packet)
-        packet = str(message_counter) + "|" + packet
-        message_counter += 1
-        encoded_packet = str.encode(packet)
-
-        Socket.send(encoded_packet)
-        response = Socket.recv(BufferSize)
-        if prev_response == response.decode():
+    current_cwnd = cwnd
+    recv_counter = 0
+    
+    while recv_counter < current_cwnd:
+      Socket.settimeout(timeout_seconds)
+      try:
+        response = Socket.recv(BufferSize).decode()
+        recv_counter += 1
+        if prev_response == response:
           # do duplicate acknowledgement
-          # decrease cwnd to 1 
-          pass
-
+          # decrease cwnd to 1
+          if dupAckCount == 3:
+            raise socket.timeout # If three duplicate acknowledgements were received then equivalent to timeout (from textbook)
+          dupAckCount += 1
+          Socket.send(str.encode(past_packets[response+1]))
+          cwnd = 1
+        else:
+          dupAckCount = 0
+          prev_response = response
+          if is_slow_start():
+            # do slow start
+            cwnd += 1
+            in_congestion = False
+          else:
+            # do congestion control
+            if in_congestion == False:
+              cwnd += 1
+              in_congestion = True
         print(response)
       
       except socket.timeout:
-        response = response.decode()
-        Socket.send(str.encode(past_packets[response-1]))
-        print("timeout")
+        # timeout deal
+        # decrease cwnd to 1
+        ssthresh = int(cwnd/2)
+        cwnd = 1
+        in_congestion = False
+
+    
+    in_congestion = False
+
       
-    if is_slow_start():
-      # increase cwnd
-      pass
-    else :
-      # congest control
-      pass
-
-
 if __name__ == "__main__":
   main()
