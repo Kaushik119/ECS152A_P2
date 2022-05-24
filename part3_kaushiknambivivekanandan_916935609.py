@@ -15,12 +15,12 @@ def is_slow_start():
   return cwnd <= ssthresh
 
 def main():
-  message = open("message.txt", 'r')
-  file_size = os.stat("message.txt").st_size
+  message = open("/home/osboxes/Desktop/ECS152A/ECS152A_P2/message.txt", 'r')
+  file_size = os.stat("/home/osboxes/Desktop/ECS152A/ECS152A_P2/message.txt").st_size
   start_at = 0
 
   port_number = int(input("Enter port number: "))
-  Server = ("127.0.0.1", port_number)
+  Server = ("", port_number)
   
   Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   Socket.connect(Server)
@@ -57,30 +57,34 @@ def main():
   packet_count = 0
   RTTTimes = [0]*len(packets)
   RTTLast = 0
+  recv_counter = 0
 
   while packet_count < len(packets):
-    print(cwnd)
-    for i in range(0 ,min(len(packets) - packet_count,cwnd)):
+    for i in range(recv_counter ,min(len(packets) - packet_count,cwnd)):
       Socket.send(str.encode(packets[packet_count]))
       BeginTimes.append(time.time())
+      print("Packet count" ,packet_count + 1)
       packet_count += 1
       
     current_cwnd = min(len(packets) - packet_count,cwnd)
     recv_counter = 0
-    
+
     while recv_counter < current_cwnd:
       Socket.settimeout(timeout_seconds)
       try:
         response = int(Socket.recv(BufferSize).decode())
+        print("Response",response)
         end_time = time.time()
         recv_counter += 1
+        
         while RTTLast < response:
           RTTTimes[RTTLast] = end_time - BeginTimes[RTTLast]
           RTTLast += 1
         
-        
-        # Socket.send(str.encode(packets[packet_count]))
-        # packet_count += 1
+        print("Packet sent after receive", packet_count+1)
+        Socket.send(str.encode(packets[packet_count]))
+        BeginTimes.append(time.time())
+        packet_count += 1
         
         if is_slow_start():
           cwnd += 1
@@ -92,8 +96,7 @@ def main():
             in_congestion = True
 
       except socket.timeout:
-        print("Timed out")
-        Socket.send(str.encode(packets[response+1]))
+        Socket.send(str.encode(packets[response]))
         ssthresh = int(cwnd/2)
         cwnd = 1
         in_congestion = False
