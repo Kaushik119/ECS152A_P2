@@ -78,6 +78,7 @@ def main():
           RTTTimes[RTTLast] = end_time - BeginTimes[RTTLast]
           RTTLast += 1
         
+        
         Socket.send(str.encode(packets[packet_count]))
         packet_count += 1
         
