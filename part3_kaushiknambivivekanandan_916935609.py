@@ -77,6 +77,7 @@ def main():
   Socket.send(str.encode(packets[packet_count]))
   BeginTimes.append(time.time)
   packet_count+=1
+  in_congestion = False
 
   # While packets still left to send
   while packet_count < len(packets):
@@ -129,8 +130,6 @@ def main():
       ssthresh = int(cwnd/2)
       cwnd = 1
       in_congestion = False
-
-    in_congestion = False
 
     SampleRTT = RTTTimes[RTTLast]
 
