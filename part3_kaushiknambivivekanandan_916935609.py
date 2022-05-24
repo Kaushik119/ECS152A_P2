@@ -31,6 +31,8 @@ def main():
   
   Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   Socket.connect(Server)
+  # Socket.setblocking(False)
+
   
   # Variables to keep track of packet and packet count 
   packet = ""
@@ -75,7 +77,7 @@ def main():
 
   # Send the first packet
   Socket.send(str.encode(packets[packet_count]))
-  BeginTimes.append(time.time)
+  BeginTimes.append(time.time())
   packet_count+=1
   in_congestion = False
 
@@ -85,7 +87,8 @@ def main():
     Socket.settimeout(timeout_seconds)
     try:
       # receive response
-      response = Socket.recv(BufferSize).decode()
+      response = int(Socket.recv(BufferSize).decode())
+      print(response)
       # Check end time
       end_time = time.time()
       
@@ -105,7 +108,7 @@ def main():
           # We can slide the window by 1 and send the packets in the new congestion window
           for i in range(packet_count, packet_count+cwnd):
             Socket.send(str.encode(packets[i]))
-            BeginTimes.append(time.time)
+            BeginTimes.append(time.time())
             packet_count += 1
             in_congestion = False
     
@@ -131,8 +134,9 @@ def main():
       cwnd = 1
       in_congestion = False
 
-    SampleRTT = RTTTimes[RTTLast]
-
+    SampleRTT = RTTTimes[RTTLast-1]
+    print(SampleRTT)
+    
     if first_packet:
       EstimatedRTT = SampleRTT
       first_packet = False
@@ -140,3 +144,7 @@ def main():
     EstimatedRTT = alpha_1*EstimatedRTT + alpha*(SampleRTT)
     DevRTT = beta_1*DevRTT + beta*(SampleRTT- EstimatedRTT)
     timeout_seconds = abs(EstimatedRTT+4*DevRTT)
+    print(timeout_seconds)
+
+if __name__ == "__main__":
+  main()
