@@ -2,7 +2,6 @@ import socket
 import os
 import time
 
-
 # TCP TAHOE IMPLEMENTED AS DESCRIBED IN TEXTBOOK
 
 read_from_file_size = 1000
@@ -10,9 +9,13 @@ timeout_seconds = 5
 cwnd = 1
 ssthresh = 16
 BufferSize = 100
+start_index = 1
 
 def is_slow_start():
   return cwnd <= ssthresh
+
+def left_hand_response(response):
+  return response == start_index
 
 def main():
   message = open("/home/osboxes/Desktop/ECS152A/ECS152A_P2/message.txt", 'r')
@@ -33,6 +36,7 @@ def main():
   global ssthresh
   global cwnd
   global timeout_seconds
+  global start_index
   
   EstimatedRTT = 0
   DevRTT = 0
@@ -57,10 +61,10 @@ def main():
   packet_count = 0
   RTTTimes = [0]*len(packets)
   RTTLast = 0
-  recv_counter = 0
+  sent_counter = 0
 
   while packet_count < len(packets):
-    for i in range(recv_counter ,min(len(packets) - packet_count,cwnd)):
+    for i in range(sent_counter ,min(len(packets) - packet_count,cwnd)):
       Socket.send(str.encode(packets[packet_count]))
       BeginTimes.append(time.time())
       print("Packet count" ,packet_count + 1)
@@ -68,7 +72,8 @@ def main():
       
     current_cwnd = min(len(packets) - packet_count,cwnd)
     recv_counter = 0
-
+    sent_counter = 0
+    
     while recv_counter < current_cwnd:
       Socket.settimeout(timeout_seconds)
       try:
@@ -81,10 +86,14 @@ def main():
           RTTTimes[RTTLast] = end_time - BeginTimes[RTTLast]
           RTTLast += 1
         
-        print("Packet sent after receive", packet_count+1)
-        Socket.send(str.encode(packets[packet_count]))
-        BeginTimes.append(time.time())
-        packet_count += 1
+        print("Start index", start_index)
+        if left_hand_response(response):
+          start_index += 1
+          print("Packet sent after receive", packet_count+1)
+          Socket.send(str.encode(packets[packet_count]))
+          sent_counter+=1
+          BeginTimes.append(time.time())
+          packet_count += 1
         
         if is_slow_start():
           cwnd += 1
@@ -96,7 +105,8 @@ def main():
             in_congestion = True
 
       except socket.timeout:
-        Socket.send(str.encode(packets[response]))
+        print("Timed out, send packet" ,response + 1)
+        Socket.send(str.encode(packets[response+1]))
         ssthresh = int(cwnd/2)
         cwnd = 1
         in_congestion = False
