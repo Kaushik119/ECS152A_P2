@@ -79,8 +79,8 @@ def main():
           RTTLast += 1
         
         
-        Socket.send(str.encode(packets[packet_count]))
-        packet_count += 1
+        # Socket.send(str.encode(packets[packet_count]))
+        # packet_count += 1
         
         if is_slow_start():
           cwnd += 1
