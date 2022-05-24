@@ -13,10 +13,12 @@ start_index = 1
 
 # Function that tells us if we are in slow start
 def is_slow_start():
-  return cwnd <= ssthresh
+  global cwnd, ssthresh
+  return cwnd < ssthresh
 
 # Function that tells us if we received a response for the left most item in the window
 def left_hand_response(response):
+  global start_index
   return response == start_index
 
 def main():
@@ -66,6 +68,7 @@ def main():
     message_counter += 1
     packets.append(packet)
 
+  print(len(packets))
   # Counter to keep track of counter
   packet_count = 0
   # Time at which we send the packet
@@ -94,7 +97,7 @@ def main():
       
       # set RTTs for all the packets sent until the one we got the response for
       while RTTLast < response:
-        RTTTimes[RTTLast] = BeginTimes[RTTLast] - end_time
+        RTTTimes[RTTLast] = end_time - BeginTimes[RTTLast]
         RTTLast += 1
 
       # If slow start
@@ -106,9 +109,11 @@ def main():
         if left_hand_response(response):
           start_index += 1
           # We can slide the window by 1 and send the packets in the new congestion window
-          for i in range(packet_count, packet_count+cwnd):
+          current_packet_count = packet_count
+          for i in range(current_packet_count, current_packet_count+cwnd):
             Socket.send(str.encode(packets[i]))
             BeginTimes.append(time.time())
+            print("SS packet_ count", packet_count)
             packet_count += 1
             in_congestion = False
     
@@ -123,7 +128,9 @@ def main():
 
         if left_hand_response(response):
           start_index += 1
-          for i in range(packet_count, packet_count+cwnd):
+          current_packet_count = packet_count
+          for i in range(current_packet_count, current_packet_count+cwnd):
+            print("packet_ count", packet_count)
             Socket.send(str.encode(packets[i]))
             packet_count += 1
             in_congestion = False
@@ -135,7 +142,6 @@ def main():
       in_congestion = False
 
     SampleRTT = RTTTimes[RTTLast-1]
-    print(SampleRTT)
     
     if first_packet:
       EstimatedRTT = SampleRTT
@@ -144,7 +150,6 @@ def main():
     EstimatedRTT = alpha_1*EstimatedRTT + alpha*(SampleRTT)
     DevRTT = beta_1*DevRTT + beta*(SampleRTT- EstimatedRTT)
     timeout_seconds = abs(EstimatedRTT+4*DevRTT)
-    print(timeout_seconds)
 
 if __name__ == "__main__":
   main()
