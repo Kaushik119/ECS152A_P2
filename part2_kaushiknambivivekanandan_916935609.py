@@ -40,6 +40,7 @@ num_received = 0
 num_outbound = 0
 resend_array = []
 ok_send = True
+prev_response = True
 
 port_number = int(input("Enter port number: "))
 Server = ("", port_number)
@@ -76,10 +77,9 @@ while(num_received < total_length):
   
   while(num_outbound > 0):
     print("num outbound > ", num_outbound)
+
     check_timeout = time.time()
-
     timeout_flag = False
-
 
     for packet in packet_start_times:
       if(check_timeout - packet.start_time > 5):
@@ -95,15 +95,19 @@ while(num_received < total_length):
       print("Waiting for packet")
       response = Socket.recv(BufferSize).decode()
       print("BEFORE setting receive: ", received_packets[int(response) - 1])
-      received_packets[int(response) - 1] = True
+      for i in range(special_packet_num, int(response)):
+        received_packets[i] = True
       # for every index less than response, set received to true
       for i in range(0, int(response)):
         received_packets[i] = True
       print("AFTER setting receive: ", received_packets[int(response) - 1])
       print("Recieved packet num: ", response)
-      num_received += 1
+      # num_received += 1
       print("NUM rec:", num_received)
 
+      new_responses = int(response) - special_packet_num + 1
+      num_received += new_responses
+      
       index = 0
       for packet in packet_start_times:
         if packet.num <= int(response):
@@ -113,11 +117,11 @@ while(num_received < total_length):
       
       print("Packet start times length", len(packet_start_times))
 
-      print_start_times = []
-      for packet in packet_start_times:
-        print_start_times.append(packet.num)
+      # print_start_times = []
+      # for packet in packet_start_times:
+      #   print_start_times.append(packet.num)
     
-      print(print_start_times)
+      # print(print_start_times)
       window += 1
       num_outbound -= 1
 
@@ -131,75 +135,8 @@ while(num_received < total_length):
         print("New special packet: ", special_packet_num)
         ok_send = True
     except socket.timeout as ex:
-      print("BRUH MOMENT (all packets timed out)")
-      for packet in packet_start_times:
-        resend_array.append(packet)
-          
+      for packet in packets:
+        if packet.num in range(special_packet_num, special_packet_num+num_outbound):
+          resend_array.append(packet)
+
 print("hello")
-
-
-# if __name__ == "__main__":
-#   message = open("message.txt", 'r')
-#   file_size = os.stat("message.txt").st_size
-
-#   port_number = int(input("Enter port number: "))
-#   Server = ("", port_number)
-  
-#   Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#   Socket.connect(Server)
-
-#   cur_file_size = 0
-#   packet_num = 1
-# #   create_new_packet = True
-#   test_packet = ""
-# #   delays = []
-
-#   packets = []
-#   while(cur_file_size < file_size):
-#     packets.append(str(packet_num) + "|" + message.read(read_from_file_size))
-#     packet_num += 1
-#     cur_file_size += 1000
-  
-
-#   while()
-
-#   while(cur_file_size < file_size):
-#     test_packet = message.read(read_from_file_size)
-#     test_packet = str(packet_num) + "|" + test_packet
-#     start = time.time()
-
-#     encoded_packet = str.encode(test_packet)
-
-#     Socket.settimeout(5)
-
-#     try:
-#       Socket.send(encoded_packet)
-
-#       response = Socket.recv(BufferSize).decode()
-#       end = time.time()
-#       delays.append(end - start)
-
-#       print()
-#       print("Current Window: [" + str(packet_num) + "]")
-#       print("Sequence Number of Packet Sent: " + str(packet_num))
-#       print("Acknowledgement Number Received: " + str(packet_num))
-#       print()
-
-#       packet_num += 1
-#       cur_file_size += 1000
-#       create_new_packet = True
-#     except socket.timeout as ex:
-#       create_test_packet = False
-  
-#   delay_avg = sum(delays) / len(delays)
-#   throughput_avg = cur_file_size / sum(delays)
-
-
-#   print("Average Delay = <" + str(delay_avg) + ">")
-#   print("Average Throughput = <" + str(throughput_avg) + ">")
-#   print("Performance = <" + str(math.log(throughput_avg, 10) - math.log(delay_avg, 10)) + ">")
-
-      
-  
-
-
