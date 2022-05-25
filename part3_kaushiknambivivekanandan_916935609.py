@@ -25,8 +25,8 @@ def printmessage(response, packet_count):
   print("Acknowledgement Number Received:", response, "\n")
 
 def main():
-  message = open("/home/osboxes/Desktop/ECS152A/ECS152A_P2/message.txt", 'r')
-  file_size = os.stat("/home/osboxes/Desktop/ECS152A/ECS152A_P2/message.txt").st_size
+  message = open("message.txt", 'r')
+  file_size = os.stat("message.txt").st_size
   start_at = 0
 
   port_number = int(input("Enter port number: "))
@@ -73,6 +73,7 @@ def main():
   ack_array = [False]*len(packets)
   response = 0
 
+  total_start = time.time()
   while packet_count < len(packets):
     for i in range(sent_counter ,min(len(packets) - packet_count,cwnd)):
       Socket.send(str.encode(packets[packet_count]))
@@ -131,6 +132,7 @@ def main():
     DevRTT = beta_1*DevRTT + beta*(SampleRTT- EstimatedRTT)
     timeout_seconds = EstimatedRTT+4*DevRTT
 
+  total_end = time.time()
 
   DelayAvg = statistics.mean(RTTTimes) * 1000
   ThroughputAvg = (file_size*8)/(sum(RTTTimes))
@@ -139,6 +141,9 @@ def main():
   print("Average Delay =",DelayAvg )
   print("Average Througput=", ThroughputAvg)
   print("Performance =", Performance)
+
+  print("Total time: ", total_end - total_start)
+
   
 if __name__ == "__main__":
   main()
