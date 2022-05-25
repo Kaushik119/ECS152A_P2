@@ -134,7 +134,9 @@ def main():
 
   total_end = time.time()
 
-  DelayAvg = (total_end - total_start)/len(packets)
+  print(total_end - total_start)
+  
+  DelayAvg = (total_end - total_start)/len(packets) * 1000
   ThroughputAvg = (file_size*8)/(DelayAvg)
   Performance = math.log10(ThroughputAvg) - math.log10(DelayAvg)
 
