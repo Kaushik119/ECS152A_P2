@@ -130,7 +130,7 @@ def main():
     
 
     in_congestion = False
-    SampleRTT = EndTimes[response-1] - BeginTimes[response -1]
+    # SampleRTT = EndTimes[response-1] - BeginTimes[response -1]
     # EstimatedRTT = alpha_1*EstimatedRTT + alpha*(SampleRTT)
     # DevRTT = beta_1*DevRTT + beta*(SampleRTT- EstimatedRTT)
     # timeout_seconds = EstimatedRTT+4*DevRTT
@@ -140,7 +140,7 @@ def main():
   RTTIndex = 0
   EndTimeIndex = 0
 
-  for i,time in enumerate(BeginTimes):
+  for i,time_t in enumerate(BeginTimes):
     
     while EndTimes[EndTimeIndex] == 0:
       EndTimeIndex+=1
