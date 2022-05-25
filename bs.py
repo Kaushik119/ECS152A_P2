@@ -47,7 +47,6 @@ def main():
   
   start_time = 0
   end_time = 0
-  prev_response = 0
 
   BeginTimes = []
 
@@ -63,12 +62,12 @@ def main():
   RTTTimes = [0]*len(packets)
   RTTLast = 0
   sent_counter = 0
-  ack_array = [False]*len(packets)
 
   while packet_count < len(packets):
     for i in range(sent_counter ,min(len(packets) - packet_count,cwnd)):
       Socket.send(str.encode(packets[packet_count]))
       BeginTimes.append(time.time())
+      print("Packet count" ,packet_count + 1)
       packet_count += 1
       
     current_cwnd = min(len(packets) - packet_count,cwnd)
@@ -78,25 +77,23 @@ def main():
       Socket.settimeout(timeout_seconds)
       try:
         response = int(Socket.recv(BufferSize).decode())
-        recv_counter += (response - prev_response)
-        prev_response = response
-
-        Socket.settimeout(None)
-
+        print("Response",response)
         end_time = time.time()
+        recv_counter += 1
         
         while RTTLast < response:
           RTTTimes[RTTLast] = end_time - BeginTimes[RTTLast]
           RTTLast += 1
-        ack_array[0:response] = [True]*(response)
- 
+        
+        print("Start index", start_index)
         if left_hand_response(response):
-          start_index = ack_array.index(False) + 1
+          start_index += 1
+          print("Packet sent after receive", packet_count+1)
           Socket.send(str.encode(packets[packet_count]))
           sent_counter+=1
           BeginTimes.append(time.time())
           packet_count += 1
-
+        
         if is_slow_start():
           cwnd += 1
           in_congestion = False
@@ -107,12 +104,13 @@ def main():
             in_congestion = True
 
       except socket.timeout:
-        Socket.send(str.encode(packets[response]))
+        print("Timed out, send packet" ,response + 1)
+        Socket.send(str.encode(packets[response+1]))
         ssthresh = int(cwnd/2)
         cwnd = 1
         in_congestion = False
-    
 
+    
     in_congestion = False
     SampleRTT = RTTTimes[RTTLast-1]
     EstimatedRTT = alpha_1*EstimatedRTT + alpha*(SampleRTT)
