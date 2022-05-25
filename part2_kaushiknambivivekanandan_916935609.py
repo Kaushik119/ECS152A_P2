@@ -44,8 +44,9 @@ Server = ("", port_number)
 Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 Socket.connect(Server)
 
-while(num_received < len(packets)):
-  print("Num outbound", num_outbound, " Ok send", ok_send)
+total_length = len(packets)
+while(num_received < total_length):
+  print("Num outbound", num_outbound, " OK SEND", ok_send)
   while(len(resend_array) > 0):
     resend = resend_array.pop(0)
     print("Resending packet num: " + str(resend.num))
@@ -55,9 +56,11 @@ while(num_received < len(packets)):
       if(packet.num == resend.num):
         packet.start_time = time.time()
   
+
   if(ok_send):
     while(window != 0):
-      packet = packets.pop(0)
+      if(len(packets) != 0):
+        packet = packets.pop(0)
       Socket.send(str.encode(packet.info))
       # print(packet.info)
       print("Sending packet num: " + str(packet.num))
@@ -68,12 +71,13 @@ while(num_received < len(packets)):
     ok_send = False
   
   while(num_outbound > 0):
+    print("num outbound > ", num_outbound)
     check_timeout = time.time()
 
     timeout_flag = False
     for packet in packet_start_times:
       if(check_timeout - packet.start_time > 5):
-        print("Packet num: ", packet.num, " timed out")
+        print("Packet num: ", packet.num, " TIMED OUT")
         resend_array.append(packet)
         timeout_flag = True
 
@@ -84,10 +88,12 @@ while(num_received < len(packets)):
     try:
       print("Waiting for packet")
       response = Socket.recv(BufferSize).decode()
+      print("BEFORE setting receive: ", received_packets[int(response) - 1])
       received_packets[int(response) - 1] = True
+      print("AFTER setting receive: ", received_packets[int(response) - 1])
       print("Recieved packet num: ", response)
       num_received += 1
-      
+      print("NUM rec:", num_received)
       for packet in packet_start_times:
         if packet.num == int(response):
           packet_start_times.remove(packet)
@@ -95,7 +101,7 @@ while(num_received < len(packets)):
       window += 1
       num_outbound -= 1
 
-      if(int(response) == special_packet_num):
+      if(int(response) == special_packet_num and num_received < total_length):
         print("Special packet found")
         special_packet_num += 1
         while(received_packets[special_packet_num - 1]):
@@ -104,11 +110,11 @@ while(num_received < len(packets)):
         print("New special packet: ", special_packet_num)
         ok_send = True
     except socket.timeout as ex:
-      print("All packets timed out")
+      print("BRUH MOMENT (all packets timed out)")
       for packet in packet_start_times:
         resend_array.append(packet)
           
-
+print("hello")
 
 
 # if __name__ == "__main__":
