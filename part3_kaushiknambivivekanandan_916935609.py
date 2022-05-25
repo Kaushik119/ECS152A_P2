@@ -1,6 +1,8 @@
 import socket
 import os
 import time
+import statistics
+import math
 
 # TCP TAHOE IMPLEMENTED AS DESCRIBED IN TEXTBOOK
 
@@ -16,6 +18,11 @@ def is_slow_start():
 
 def left_hand_response(response):
   return response == start_index
+
+def printmessage(response, packet_count):
+  print("Current Window:",list(range(packet_count + start_index - 1, packet_count + cwnd)))
+  print("Sequence Number of Packet sent:", packet_count)
+  print("Acknowledgement Number Received:", response, "\n")
 
 def main():
   message = open("/home/osboxes/Desktop/ECS152A/ECS152A_P2/message.txt", 'r')
@@ -64,10 +71,12 @@ def main():
   RTTLast = 0
   sent_counter = 0
   ack_array = [False]*len(packets)
+  response = 0
 
   while packet_count < len(packets):
     for i in range(sent_counter ,min(len(packets) - packet_count,cwnd)):
       Socket.send(str.encode(packets[packet_count]))
+      # printmessage(response, packet_count+1)
       BeginTimes.append(time.time())
       packet_count += 1
       
@@ -78,25 +87,18 @@ def main():
       Socket.settimeout(timeout_seconds)
       try:
         response = int(Socket.recv(BufferSize).decode())
+        end_time = time.time()
         recv_counter += (response - prev_response)
+        # printmessage(response, packet_count+1)
         prev_response = response
-
         Socket.settimeout(None)
 
-        end_time = time.time()
-        
         while RTTLast < response:
           RTTTimes[RTTLast] = end_time - BeginTimes[RTTLast]
           RTTLast += 1
+        
         ack_array[0:response] = [True]*(response)
  
-        if left_hand_response(response):
-          start_index = ack_array.index(False) + 1
-          Socket.send(str.encode(packets[packet_count]))
-          sent_counter+=1
-          BeginTimes.append(time.time())
-          packet_count += 1
-
         if is_slow_start():
           cwnd += 1
           in_congestion = False
@@ -105,6 +107,15 @@ def main():
           if in_congestion == False:
             cwnd += 1
             in_congestion = True
+
+        if left_hand_response(response):
+          start_index = ack_array.index(False) + 1
+          Socket.send(str.encode(packets[packet_count]))
+          # printmessage(response, packet_count+1)
+          sent_counter+=1
+          BeginTimes.append(time.time())
+          packet_count += 1
+
 
       except socket.timeout:
         Socket.send(str.encode(packets[response]))
@@ -115,10 +126,19 @@ def main():
 
     in_congestion = False
     SampleRTT = RTTTimes[RTTLast-1]
+    print(SampleRTT)
     EstimatedRTT = alpha_1*EstimatedRTT + alpha*(SampleRTT)
     DevRTT = beta_1*DevRTT + beta*(SampleRTT- EstimatedRTT)
     timeout_seconds = EstimatedRTT+4*DevRTT
 
 
+  DelayAvg = statistics.mean(RTTTimes) * 1000
+  ThroughputAvg = (file_size*8)/(sum(RTTTimes))
+  Performance = math.log10(ThroughputAvg) - math.log10(DelayAvg)
+
+  print("Average Delay =",DelayAvg )
+  print("Average Througput=", ThroughputAvg)
+  print("Performance =", Performance)
+  
 if __name__ == "__main__":
   main()
