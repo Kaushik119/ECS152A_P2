@@ -3,7 +3,7 @@ import os
 import time
 import math
 
-read_from_file_size = 949
+read_from_file_size = 1000
 BufferSize = 100
 
 if __name__ == "__main__":
@@ -52,7 +52,7 @@ if __name__ == "__main__":
       create_test_packet = False
   
   delay_avg = sum(delays) / len(delays)
-  throughput_avg = cur_file_size / sum(delays)
+  throughput_avg = cur_file_size * 8 / sum(delays)
 
 
   print("Average Delay = <" + str(delay_avg) + ">")
