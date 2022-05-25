@@ -67,18 +67,17 @@ def main():
     packets.append(packet)
 
   packet_count = 0
-  EndTimes = [0]*len(packets)
+  RTTTimes = [0]*len(packets)
   RTTLast = 0
   sent_counter = 0
   ack_array = [False]*len(packets)
   response = 0
 
   total_start = time.time()
-
   while packet_count < len(packets):
     for i in range(sent_counter ,min(len(packets) - packet_count,cwnd)):
       Socket.send(str.encode(packets[packet_count]))
-      # printmessage(response, packet_count+1)
+      printmessage(response, packet_count+1)
       BeginTimes.append(time.time())
       packet_count += 1
       
@@ -91,16 +90,13 @@ def main():
         response = int(Socket.recv(BufferSize).decode())
         end_time = time.time()
         recv_counter += (response - prev_response)
-        # printmessage(response, packet_count+1)
+        printmessage(response, packet_count+1)
         prev_response = response
         Socket.settimeout(None)
 
-        # while RTTLast < response:
-        # print(end_time - BeginTimes[response-1])
-        # RTTTimes[response-1] = (end_time - BeginTimes[response-1])
-        # RTTLast += 1
-        EndTimes[response-1] = end_time
-
+        while RTTLast < response:
+          RTTTimes[RTTLast] = end_time - BeginTimes[RTTLast]
+          RTTLast += 1
         
         ack_array[0:response] = [True]*(response)
  
@@ -116,7 +112,7 @@ def main():
         if left_hand_response(response):
           start_index = ack_array.index(False) + 1
           Socket.send(str.encode(packets[packet_count]))
-          # printmessage(response, packet_count+1)
+          printmessage(response, packet_count+1)
           sent_counter+=1
           BeginTimes.append(time.time())
           packet_count += 1
@@ -130,39 +126,22 @@ def main():
     
 
     in_congestion = False
-    SampleRTT = EndTimes[response-1] - BeginTimes[response -1]
-    # EstimatedRTT = alpha_1*EstimatedRTT + alpha*(SampleRTT)
-    # DevRTT = beta_1*DevRTT + beta*(SampleRTT- EstimatedRTT)
-    # timeout_seconds = EstimatedRTT+4*DevRTT
+    SampleRTT = RTTTimes[RTTLast-1]
+    print(SampleRTT)
+    EstimatedRTT = alpha_1*EstimatedRTT + alpha*(SampleRTT)
+    DevRTT = beta_1*DevRTT + beta*(SampleRTT- EstimatedRTT)
+    timeout_seconds = EstimatedRTT+4*DevRTT
 
   total_end = time.time()
-  RTTTimes = []
-  RTTIndex = 0
-  EndTimeIndex = 0
 
-  for i,time in enumerate(BeginTimes):
-    
-    while EndTimes[EndTimeIndex] == 0:
-      EndTimeIndex+=1
-    EndTimeIndex += 1
-    
-    counter = 0
-    for j in range(RTTIndex, EndTimeIndex):
-      RTTTimes[j] = EndTimes[EndTimeIndex -1] - BeginTimes[j]
-      counter +=1 
-    
-    RTTIndex += counter
-
-  DelayAvg = statistics.mean(RTTTimes) * 1000
-  ThroughputAvg = (file_size*8)/(sum(RTTTimes))
+  DelayAvg = (total_end - total_start)/len(packets)
+  ThroughputAvg = (file_size*8)/(DelayAvg)
   Performance = math.log10(ThroughputAvg) - math.log10(DelayAvg)
+
 
   print("Average Delay =",DelayAvg )
   print("Average Througput=", ThroughputAvg)
   print("Performance =", Performance)
-
-  print("Total time: ", total_end - total_start)
-
   
 if __name__ == "__main__":
   main()
