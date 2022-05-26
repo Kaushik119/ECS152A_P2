@@ -1,7 +1,9 @@
 import socket
 import os
 import time
-import statistics
+import sys
+import seaborn as sns
+import matplotlib.pyplot as plt
 import math
 
 # TCP TAHOE IMPLEMENTED AS DESCRIBED IN TEXTBOOK
@@ -127,23 +129,35 @@ def main():
 
     in_congestion = False
     SampleRTT = RTTTimes[RTTLast-1]
-    print(SampleRTT)
     EstimatedRTT = alpha_1*EstimatedRTT + alpha*(SampleRTT)
     DevRTT = beta_1*DevRTT + beta*(SampleRTT- EstimatedRTT)
     timeout_seconds = EstimatedRTT+4*DevRTT
 
   total_end = time.time()
-
-  print(total_end - total_start)
   
   DelayAvg = (total_end - total_start)/len(packets) * 1000
   ThroughputAvg = (file_size*8)/(DelayAvg)
   Performance = math.log10(ThroughputAvg) - math.log10(DelayAvg)
 
-
   print("Average Delay =",DelayAvg )
   print("Average Througput=", ThroughputAvg)
   print("Performance =", Performance)
+
+  PPThroughput = []
+  for packet_count, times in enumerate(RTTTimes):
+    if times != 0:
+      PPThroughput.append((sys.getsizeof(packets[packet_count])*8)/times)
+
+  fig, axes = plt.subplots(1,2)
+  fig.suptitle("Graphs for Port Number " + str(port_number))
+  
+  RTT = sns.lineplot(x = range(0, len(packets)),y = RTTTimes, ax = axes[0])
+  RTT.set(xlabel = "Packet Number", ylabel = "RTT", title = "RTT for Packets on Port " + str(port_number))
+
+  Throughput = sns.lineplot(x = range(0, len(PPThroughput)),y = PPThroughput, ax = axes[1])
+  Throughput.set(xlabel = "Packet Number", ylabel = "Per Packet Throughput", title = "PPT for Packets on Port " + str(port_number))
+
+  plt.show()
   
 if __name__ == "__main__":
   main()
