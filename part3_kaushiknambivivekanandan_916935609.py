@@ -25,7 +25,7 @@ def left_hand_response(response):
 
 # Print the message on receive or send
 def printmessage(response, packet_count):
-  print("Current Window:",list(range(packet_count + start_index - 1, packet_count + cwnd)))
+  print("Current Window:",list(range(packet_count + start_index - 1, packet_count + cwnd + 1)))
   print("Sequence Number of Packet sent:", packet_count)
   print("Acknowledgement Number Received:", response, "\n")
 
