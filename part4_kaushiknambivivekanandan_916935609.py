@@ -159,8 +159,8 @@ def main():
       except socket.timeout:
         # Send the packet again and update the ssthresh and cwnd
         Socket.send(str.encode(packets[response]))
-        ssthresh = int(cwnd/2)
-        cwnd = int(cwnd * 0.3)
+        ssthresh = int(cwnd*0.8)
+        cwnd = int(cwnd*0.3)
         in_congestion = False
     
     # Reset congestion flag and calculate dynamic timeout
