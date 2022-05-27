@@ -24,6 +24,7 @@ if __name__ == "__main__":
   create_new_packet = True
   test_packet = ""
   delays = []
+  lost_packets = 0
 
   while(cur_file_size < file_size):
     if(create_new_packet):
@@ -52,15 +53,17 @@ if __name__ == "__main__":
       cur_file_size += 1000
       create_new_packet = True
     except socket.timeout as ex:
+      lost_packets += 1
       create_test_packet = False
   
-  delay_avg = sum(delays) / len(delays)
-  throughput_avg = cur_file_size * 8 / sum(delays)
+  delay_avg = (sum(delays) / len(delays)) * 1000
+  throughput_avg = cur_file_size * 8 / delay_avg
 
 
   print("Average Delay = <" + str(delay_avg) + ">")
   print("Average Throughput = <" + str(throughput_avg) + ">")
   print("Performance = <" + str(math.log(throughput_avg, 10) - math.log(delay_avg, 10)) + ">")
+  print("Packets lost =", lost_packets)
 
   packet_size = sys.getsizeof(test_packet) * 8
   ppt = []
