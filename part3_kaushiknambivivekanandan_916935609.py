@@ -93,6 +93,8 @@ def main():
   ack_array = [False]*len(packets)
   # response that we received
   response = 0
+  # packet loss variable
+  lost_packets = 0
 
   # Keep track of start time 
   total_start = time.time()
@@ -161,6 +163,7 @@ def main():
         Socket.send(str.encode(packets[response]))
         ssthresh = int(cwnd/2)
         cwnd = 1
+        lost_packets += 1
         in_congestion = False
     
     # Reset congestion flag and calculate dynamic timeout
@@ -181,6 +184,7 @@ def main():
   print("Average Delay =",DelayAvg )
   print("Average Througput=", ThroughputAvg)
   print("Performance =", Performance)
+  print("Packets lost =", lost_packets)
 
   # Calculate the per packet througput
   PPThroughput = []

@@ -87,6 +87,8 @@ def main():
   response = 0
   # dup ack count 
   dupAckCount = 0
+  # packet loss
+  lost_packets = 0
 
   # Keep track of start time 
   total_start = time.time()
@@ -151,6 +153,7 @@ def main():
       except socket.timeout:
         # Send the packet again and update the ssthresh and cwnd
         dupAckCount = 0
+        lost_packets += 1
         Socket.send(str.encode(packets[response]))
     
   # Mark end time
@@ -164,6 +167,7 @@ def main():
   print("Average Delay =",DelayAvg )
   print("Average Througput=", ThroughputAvg)
   print("Performance =", Performance)
+  print("Packets lost =", lost_packets)
 
   # Calculate the per packet througput
   PPThroughput = []
